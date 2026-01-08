@@ -33,7 +33,7 @@ def main():
     model = YOLO("yolov8s.pt")
 
     mqtt_client = mqtt.Client()
-    mqtt_client.connect("localhost", 1883, 60)
+    mqtt_client.connect("192.168.56.1", 1883, 60)
     mqtt_client.loop_start()
 
     last_count = -1
