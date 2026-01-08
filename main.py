@@ -3,6 +3,9 @@ import argparse
 import supervision as sv
 from ultralytics import YOLO
 import numpy as np
+import json
+import time
+import paho.mqtt.client as mqtt
 
 ZONE_POLYGON = np.array([
     [0, 0],
@@ -28,6 +31,12 @@ def main():
     cap.set(cv2.CAP_PROP_FRAME_HEIGHT, frame_height)
 
     model = YOLO("yolov8s.pt")
+
+    mqtt_client = mqtt.Client()
+    mqtt_client.connect("localhost", 1883, 60)
+    mqtt_client.loop_start()
+
+    last_count = -1
 
     box_annotator = sv.BoxAnnotator(thickness=2)
     label_annotator = sv.LabelAnnotator(text_thickness=3)
@@ -71,7 +80,21 @@ def main():
         ids_in_zone = ids_in_zone[ids_in_zone != None]
 
         count = len(set(ids_in_zone))
+        print(count)
         frame = zone_annotator.annotate(scene=frame)
+
+        if count != last_count:
+            payload = {
+                "count": count,
+                "timestamp": int(time.time())
+            }
+            mqtt_client.publish(
+                "vision/zone1",
+                json.dumps(payload),
+                qos=1,
+                retain=True
+            )
+            last_count = count
 
         cv2.imshow("yolov8s", frame)
 
